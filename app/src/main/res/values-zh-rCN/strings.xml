@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">音文</string>
+    <string name="copyright">Copyright © 2024 江健 All Rights Reserved.</string>
+    <string name="exit_tip">再按一次退出</string>
+</resources>
