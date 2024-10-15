@@ -1,7 +1,16 @@
 <resources>
     <!-- Base application theme. -->
-    <style name="Base.Theme.AT" parent="Theme.AppCompat.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/purple_500</item>
+    <style name="Base.Theme.AT" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/theme</item>
+        <item name="android:colorControlActivated">?attr/colorPrimary</item>
+        <!-- 边框颜色 -->
+        <item name="boxStrokeColor">?attr/colorPrimary</item>
+        <!-- 获得焦点时的边框颜色 -->
+        <item name="boxStrokeWidthFocused">?attr/colorPrimary</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:editTextColor">?attr/colorPrimary</item>
+        <item name="titleTextColor">@color/white</item>
+        <item name="tabIndicatorColor">@android:color/holo_blue_light</item>
     </style>
 
     <style name="Theme.AT.Splash" parent="Base.Theme.AT">
@@ -14,11 +23,6 @@
 
     <style name="TabLayoutTextSelected">
         <item name="android:textSize">20sp</item>
-        <item name="android:textColor">?attr/colorPrimary</item>
-    </style>
-
-    <style name="TabLayoutTextUnSelected">
-        <item name="android:textSize">15sp</item>
-        <item name="android:textColor">?attr/colorPrimary</item>
+        <item name="android:textColor">?attr/titleTextColor</item>
     </style>
 </resources>

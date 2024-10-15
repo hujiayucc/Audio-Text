@@ -1,14 +1,13 @@
 package io.github.datch666.audio_text.ui.activity
 
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
-import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
-import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import io.github.datch666.audio_text.R
 import io.github.datch666.audio_text.databinding.ActivityMainBinding
@@ -23,6 +22,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        mainActivity = this
         binding = ActivityMainBinding.inflate(layoutInflater)
         viewPager2 = binding.viewPager
         setContentView(binding.root)
@@ -49,6 +49,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun initViewPager() {
+        viewPager2.isUserInputEnabled = false
         viewPager2.adapter = ViewPagerAdapter(this, listOf(
             HomeFragment(),
             SecondFragment()
@@ -76,5 +77,26 @@ class MainActivity : AppCompatActivity() {
             return true
         }
         return super.onKeyDown(keyCode, event)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        when (requestCode) {
+            0,1 -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this, "${permissionNames[requestCode]} Permission granted", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "${permissionNames[requestCode]} Permission denied", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+    }
+
+    companion object {
+        val permissionNames = arrayOf(
+            "READ_EXTERNAL_STORAGE",
+            "WRITE_EXTERNAL_STORAGE"
+        )
+        lateinit var mainActivity: MainActivity
     }
 }
