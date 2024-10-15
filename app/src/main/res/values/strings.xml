@@ -2,4 +2,6 @@
     <string name="app_name">AT</string>
     <string name="copyright">Copyright © 2024 Datch All Rights Reserved.</string>
     <string name="exit_tip">Press again to exit</string>
+    <string name="tab_home">Encode</string>
+    <string name="tab_second">Decode</string>
 </resources>

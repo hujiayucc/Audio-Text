@@ -4,21 +4,31 @@ import android.os.Bundle
 import android.view.KeyEvent
 import android.view.View
 import android.view.WindowManager
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.tabs.TabLayout
+import com.google.android.material.tabs.TabLayoutMediator
 import io.github.datch666.audio_text.R
 import io.github.datch666.audio_text.databinding.ActivityMainBinding
+import io.github.datch666.audio_text.ui.adapter.ViewPagerAdapter
+import io.github.datch666.audio_text.ui.fragment.HomeFragment
+import io.github.datch666.audio_text.ui.fragment.SecondFragment
 import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
+    private lateinit var viewPager2: ViewPager2
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
+        viewPager2 = binding.viewPager
         setContentView(binding.root)
         initView()
         setSupportActionBar(binding.toolbar)
+        initViewPager()
     }
 
     private fun initView() {
@@ -36,6 +46,21 @@ class MainActivity : AppCompatActivity() {
         params.layoutInDisplayCutoutMode =
             WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_SHORT_EDGES
         window.attributes = params
+    }
+
+    private fun initViewPager() {
+        viewPager2.adapter = ViewPagerAdapter(this, listOf(
+            HomeFragment(),
+            SecondFragment()
+        ))
+
+        TabLayoutMediator(binding.tabLayout, viewPager2) { tab, position ->
+            tab.text = when (position) {
+                0 -> getString(R.string.tab_home)
+                1 -> getString(R.string.tab_second)
+                else -> ""
+            }
+        }.attach()
     }
 
     private var exitTime: Long = 0

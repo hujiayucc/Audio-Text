@@ -11,4 +11,14 @@
     <style name="Theme.AT.Main" parent="Base.Theme.AT">
         <item name="android:windowTranslucentNavigation">true</item>
     </style>
+
+    <style name="TabLayoutTextSelected">
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+    </style>
+
+    <style name="TabLayoutTextUnSelected">
+        <item name="android:textSize">15sp</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+    </style>
 </resources>

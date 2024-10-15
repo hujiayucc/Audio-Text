@@ -3,4 +3,6 @@
     <string name="app_name">音文</string>
     <string name="copyright">Copyright © 2024 江健 All Rights Reserved.</string>
     <string name="exit_tip">再按一次退出</string>
+    <string name="tab_home">加密</string>
+    <string name="tab_second">解密</string>
 </resources>
