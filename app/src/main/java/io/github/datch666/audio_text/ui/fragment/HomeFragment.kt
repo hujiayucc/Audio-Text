@@ -4,6 +4,7 @@ import android.Manifest.permission.MANAGE_EXTERNAL_STORAGE
 import android.Manifest.permission.READ_EXTERNAL_STORAGE
 import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.app.Activity
+import android.content.Context.CLIPBOARD_SERVICE
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.MediaPlayer
@@ -19,6 +20,7 @@ import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import io.github.datch666.audio_text.R
 import io.github.datch666.audio_text.databinding.FragmentHomeBinding
 import io.github.datch666.audio_text.ui.activity.MainActivity.Companion.mainActivity
 import io.github.datch666.audio_text.ui.activity.MainActivity.Companion.permissionNames
@@ -47,8 +49,7 @@ class HomeFragment : Fragment() {
                 requestPermission(arrayOf(WRITE_EXTERNAL_STORAGE), 1)
                 return@setOnClickListener
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager().not()) {
-                Toast.makeText(this, "${ActivityCompat.checkSelfPermission(this, MANAGE_EXTERNAL_STORAGE)}", Toast.LENGTH_SHORT).show()
-                requestPermission(arrayOf(MANAGE_EXTERNAL_STORAGE), 2)
+                requestPermission(arrayOf(MANAGE_EXTERNAL_STORAGE))
                 return@setOnClickListener
             } else if (mediaPlayer.isPlaying) {
                 mediaPlayer.stop()
@@ -63,7 +64,8 @@ class HomeFragment : Fragment() {
     // 播放音频文件
     private fun playAudio(path: String) {
         if (path.isBlank()) {
-            Toast.makeText(mainActivity, "Please input the path of the audio file.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(mainActivity,
+                getString(R.string.please_input_the_path_of_the_audio_file), Toast.LENGTH_SHORT).show()
             return
         }
         try {
@@ -74,18 +76,29 @@ class HomeFragment : Fragment() {
                 mediaPlayer.reset()
             }
         } catch (e: Exception) {
+            var error: String = ""
+            for (i in e.stackTrace.indices) {
+                error += e.stackTrace[i].toString() + "\n"
+            }
             MaterialAlertDialogBuilder(mainActivity)
-                .setTitle("Error")
-                .setMessage(e.message)
-                .show()
+                .setTitle(getString(R.string.error))
+                .setMessage(error)
+                .setCancelable(false)
+                .setNeutralButton(getString(R.string.copy)) { _, _ ->
+                    val clipboardManager = mainActivity.getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    clipboardManager.setPrimaryClip(android.content.ClipData.newPlainText("error", error))
+                }.setNegativeButton(getString(R.string.close)) { dialog, _ -> dialog.dismiss() }.show()
         }
     }
 
-    private fun Activity.requestPermission(permissions: Array<String>, requestCode: Int) {
+    private fun Activity.requestPermission(permissions: Array<String>, requestCode: Int = 2) {
         MaterialAlertDialogBuilder(this)
-            .setTitle("Tips")
-            .setMessage("This feature requires ${permissionNames[requestCode]} permission.")
-            .setPositiveButton("OK") { _, _ ->
+            .setTitle(getString(R.string.tips))
+            .setMessage(getString(
+                R.string.this_feature_requires_permission,
+                permissionNames[requestCode]
+            ))
+            .setPositiveButton(getString(R.string.ok)) { _, _ ->
                 if (permissions[0] == MANAGE_EXTERNAL_STORAGE && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
                     intent.addCategory(Intent.CATEGORY_DEFAULT)
@@ -94,7 +107,7 @@ class HomeFragment : Fragment() {
                     return@setPositiveButton
                 }
                 requestPermissions(permissions, requestCode)
-            }.setNeutralButton("Cancel") { _, _ ->
+            }.setNeutralButton(getString(R.string.cancel)) { _, _ ->
                 exitProcess(403)
             }.show()
     }

@@ -16,6 +16,7 @@ import io.github.datch666.audio_text.ui.fragment.HomeFragment
 import io.github.datch666.audio_text.ui.fragment.SecondFragment
 import kotlin.system.exitProcess
 
+@Suppress("DEPRECATION")
 class MainActivity : AppCompatActivity() {
     private lateinit var binding: ActivityMainBinding
     private lateinit var viewPager2: ViewPager2
@@ -84,9 +85,11 @@ class MainActivity : AppCompatActivity() {
         when (requestCode) {
             0,1 -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this, "${permissionNames[requestCode]} Permission granted", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this,
+                        getString(R.string.permission_granted, permissionNames[requestCode]), Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(this, "${permissionNames[requestCode]} Permission denied", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this,
+                        getString(R.string.permission_denied, permissionNames[requestCode]), Toast.LENGTH_SHORT).show()
                 }
             }
         }
@@ -95,7 +98,8 @@ class MainActivity : AppCompatActivity() {
     companion object {
         val permissionNames = arrayOf(
             "READ_EXTERNAL_STORAGE",
-            "WRITE_EXTERNAL_STORAGE"
+            "WRITE_EXTERNAL_STORAGE",
+            "MANAGE_EXTERNAL_STORAGE"
         )
         lateinit var mainActivity: MainActivity
     }

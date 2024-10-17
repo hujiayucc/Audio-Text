@@ -5,4 +5,14 @@
     <string name="exit_tip">再按一次退出</string>
     <string name="tab_home">加密</string>
     <string name="tab_second">解密</string>
+    <string name="tips">提示</string>
+    <string name="cancel">取消</string>
+    <string name="please_input_the_path_of_the_audio_file">请输入音频文件路径</string>
+    <string name="error">错误</string>
+    <string name="this_feature_requires_permission">此功能需要  %1$s 权限</string>
+    <string name="ok">确定</string>
+    <string name="permission_granted">%1$s 权限授权成功</string>
+    <string name="permission_denied">%1$s 权限授权失败</string>
+    <string name="copy">复制</string>
+    <string name="close">关闭</string>
 </resources>

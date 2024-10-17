@@ -4,4 +4,14 @@
     <string name="exit_tip">Press again to exit</string>
     <string name="tab_home">Encode</string>
     <string name="tab_second">Decode</string>
+    <string name="tips">Tips</string>
+    <string name="cancel">Cancel</string>
+    <string name="please_input_the_path_of_the_audio_file">Please input the path of the audio file.</string>
+    <string name="error">Error</string>
+    <string name="this_feature_requires_permission">This feature requires %1$s permission.</string>
+    <string name="ok">OK</string>
+    <string name="permission_granted">%1$s Permission granted</string>
+    <string name="permission_denied">%1$s Permission denied</string>
+    <string name="copy">Copy</string>
+    <string name="close">Close</string>
 </resources>
