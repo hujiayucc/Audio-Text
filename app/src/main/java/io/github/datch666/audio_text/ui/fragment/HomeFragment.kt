@@ -13,6 +13,7 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.Settings
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -24,6 +25,8 @@ import io.github.datch666.audio_text.R
 import io.github.datch666.audio_text.databinding.FragmentHomeBinding
 import io.github.datch666.audio_text.ui.activity.MainActivity.Companion.mainActivity
 import io.github.datch666.audio_text.ui.activity.MainActivity.Companion.permissionNames
+import io.github.datch666.core.Callback
+import io.github.datch666.core.TextToMusic
 import kotlin.system.exitProcess
 
 class HomeFragment : Fragment() {
@@ -56,8 +59,19 @@ class HomeFragment : Fragment() {
                 mediaPlayer.reset()
                 return@setOnClickListener
             }
-            val path = binding.editView.text.toString()
-            playAudio(path)
+            val music = TextToMusic()
+            music.generateAndConcatenate(
+                binding.editView.text.toString(),
+                cacheDir.path,
+                object : Callback {
+                    override fun onSuccess(path: String) {
+                        playAudio(path)
+                    }
+
+                    override fun onError(errorMessage: String) {
+                        Log.e("TAG", "onError: $errorMessage")
+                    }
+                })
         }
     }
 
@@ -76,6 +90,7 @@ class HomeFragment : Fragment() {
                 mediaPlayer.reset()
             }
         } catch (e: Exception) {
+            e.printStackTrace()
             var error: String = ""
             for (i in e.stackTrace.indices) {
                 error += e.stackTrace[i].toString() + "\n"

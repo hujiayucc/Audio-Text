@@ -2,7 +2,6 @@ package io.github.datch666.audio_text.ui.activity
 
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.view.KeyEvent
@@ -15,6 +14,7 @@ import androidx.appcompat.app.AppCompatActivity
 import io.github.datch666.audio_text.R
 import io.github.datch666.audio_text.databinding.ActivitySplashBinding
 
+@Suppress("DEPRECATION")
 @SuppressLint("CustomSplashScreen")
 class SplashActivity : AppCompatActivity() {
     private lateinit var binding: ActivitySplashBinding
