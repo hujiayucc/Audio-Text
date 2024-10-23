@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "io.github.datch666.audio_text"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "io.github.datch666.audio_text"
         minSdk = 28
-        targetSdk = 34
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
