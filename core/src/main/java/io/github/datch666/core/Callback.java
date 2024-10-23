@@ -1,12 +1,12 @@
 package io.github.datch666.core;
 
 public interface Callback {
-    /** Called when the task is started. */
+    /** 开始 */
     void onStart();
-    /** Called when the task is completed successfully. */
-    void onSuccess(String path);
-    /** Called when an error occurs during the task. */
+    /** 成功 */
+    void onSuccess(String fileName);
+    /** 发生错误 */
     void onError(String errorMessage);
-    /** Called to report the progress of the task. */
+    /** 进度 */
     void onProgress(Progress progress);
 }

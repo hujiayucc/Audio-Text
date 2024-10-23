@@ -11,10 +11,10 @@ import org.junit.Test
 class ExampleUnitTest {
     @Test
     fun addition_isCorrect() {
-        val text = "Hello 123, 世界!"
+        val text = "."
         for (c in text) {
             val frequency = getFrequency(c)
-            System.out.printf("字符: %c, 频率: %.2f Hz\n", c, frequency)
+            System.out.printf("字符: %c, 频率: %s Hz\n", c, frequency)
         }
     }
 }

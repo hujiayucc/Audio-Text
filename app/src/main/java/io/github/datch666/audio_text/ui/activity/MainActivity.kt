@@ -1,12 +1,16 @@
 package io.github.datch666.audio_text.ui.activity
 
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.KeyEvent
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.FileProvider
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.tabs.TabLayoutMediator
 import io.github.datch666.audio_text.R
@@ -14,6 +18,7 @@ import io.github.datch666.audio_text.databinding.ActivityMainBinding
 import io.github.datch666.audio_text.ui.adapter.ViewPagerAdapter
 import io.github.datch666.audio_text.ui.fragment.HomeFragment
 import io.github.datch666.audio_text.ui.fragment.SecondFragment
+import java.io.File
 import kotlin.system.exitProcess
 
 @Suppress("DEPRECATION")
@@ -95,6 +100,39 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.encode, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        return when (item.itemId) {
+            R.id.shareAudio -> {
+                if (fileName == null) {
+                    Toast.makeText(this,
+                        getString(R.string.please_generate_an_audio_file_first), Toast.LENGTH_SHORT).show()
+                } else {
+                    shareAudio()
+                }
+                true
+            }
+
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun shareAudio() {
+        val uri = FileProvider.getUriForFile(
+            this,
+            "${packageName}.provider",
+            File(fileName.toString())
+        )
+        val intent = Intent(Intent.ACTION_SEND)
+        intent.type = "audio/wav"
+        intent.putExtra(Intent.EXTRA_STREAM, uri)
+        startActivity(Intent.createChooser(intent, getString(R.string.app_name)))
+    }
+
     companion object {
         val permissionNames = arrayOf(
             "READ_EXTERNAL_STORAGE",
@@ -102,5 +140,6 @@ class MainActivity : AppCompatActivity() {
             "MANAGE_EXTERNAL_STORAGE"
         )
         lateinit var mainActivity: MainActivity
+        var fileName: String? = null
     }
 }

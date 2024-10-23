@@ -27,5 +27,5 @@ android {
 }
 
 dependencies {
-    implementation(libs.ffmpeg.kit.full)
+    implementation(libs.commons.math3)
 }

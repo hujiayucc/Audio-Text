@@ -18,4 +18,7 @@
     <string name="generate_audio">Generate audio</string>
     <string name="concatenate_audio">Concatenate audio</string>
     <string name="finish">Finish</string>
+    <string name="please_input_your_text">Please input your text!</string>
+    <string name="please_generate_an_audio_file_first">Please generate an Audio file first</string>
+    <string name="share">Share</string>
 </resources>

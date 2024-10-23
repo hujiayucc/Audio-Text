@@ -1,152 +1,267 @@
 package io.github.datch666.core;
 
-import android.annotation.SuppressLint;
-import android.util.Log;
-
-import com.arthenica.ffmpegkit.FFmpegKit;
-import com.arthenica.ffmpegkit.ReturnCode;
-
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.util.ArrayList;
+import java.util.List;
 
+/**
+ * 文本转换为音乐
+ */
 public class TextToMusic {
-    private static final String TAG = "TextToMusic";
+    private final String TAG = "TextToMusic";
+    /**
+     * 采样率
+     */
+    private final int SAMPLE;
+    /**
+     * 输出路径
+     */
+    private final String OUTPUT_PATH;
+    /**
+     * 输出文件名
+     */
+    private final String OUTPUT_FILE_NAME = String.valueOf(System.currentTimeMillis());
+    /**
+     * 持续时间（秒）
+     */
+    private final double DURATION = 0.5;
 
     /**
-     * 创建包含文件列表的文本文件
-     * 该方法用于将一组文件路径写入到一个指定的文本文件中
-     * 每个文件路径将在文本文件中以"file '路径'"的格式单独占一行
-     *
-     * @param files 文件路径数组，表示需要列出的文件集合
-     * @param listFilePath 字符串，表示将要创建的文件列表的路径
-     * @throws IOException 如果写入文件时发生I/O错误
+     * 标准采样率
+     * @param outputPath 输出路径
      */
-    private void createFileList(String[] files, String listFilePath) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new FileWriter(listFilePath));
-        for (String file : files) {
-            writer.write("file '" + file + "'\n");
-        }
-        writer.close();
+    public TextToMusic(String outputPath) {
+        OUTPUT_PATH = outputPath;
+        SAMPLE = Sample.STANDARD.getValue();
     }
 
     /**
-     * 合并后删除临时文件
+     * 自定义采样率
      *
-     * @param outputDir  输出目录路径，用于查找临时文件
-     * @param outputPath 最终合并文件的路径，用于保留该文件不被删除
+     * @param outputPath 输出路径
+     * @param sample {@link Sample} 采样率
      */
-    private void deleteTempFiles(String outputDir, String outputPath) {
-        // 创建一个File对象代表输出目录
-        File outputDirFile = new File(outputDir);
-        // 检查输出目录是否存在
-        if (outputDirFile.exists()) {
-            // 遍历输出目录中的所有文件
-            for (File file : outputDirFile.listFiles()) {
-                // 如果当前文件名不在最终输出路径中，则删除该文件
-                if (!outputPath.contains(file.getName()))
-                    file.delete();
-            }
-        }
+    public TextToMusic(String outputPath, Sample sample) {
+        OUTPUT_PATH = outputPath;
+        SAMPLE = sample.getValue();
     }
 
-    /**
-     * 将多个 WAV 文件拼接成一个文件
-     *
-     * @param wavFiles     需要拼接的 WAV 文件路径数组
-     * @param outputDir    输出文件列表的目录
-     * @param outputPath   拼接完成的文件输出路径
-     * @param callback     拼接操作完成后的回调
-     *
-     * 此方法首先创建一个包含所有 WAV 文件路径的文本文件，然后使用 FFmpeg 根据这个文件列表
-     * 将所有 WAV 文件拼接成一个文件此方法使用异步方式执行 FFmpeg 命令，并在操作完成后通过回调
-     * 通知调用者操作结果
-     */
-    private void concatenateWavFiles(
-            String[] wavFiles,
-            String outputDir,
-            String outputPath,
-            Callback callback
-    ) {
-        try {
-            String listFilePath = String.format("%s/wav_list.txt", outputDir);
-            createFileList(wavFiles, listFilePath);
-
-            // 使用 FFmpeg 拼接文件
-            String ffmpegCommand = String.format(
-                    "-f concat -safe 0 -i %s -c copy %s",
-                    listFilePath,
-                    outputPath
-            );
-
-            Log.i(TAG, "输出：" + ffmpegCommand);
-
-            FFmpegKit.executeAsync(ffmpegCommand, session -> {
-                if (ReturnCode.isSuccess(session.getReturnCode())) {
-                    Log.i(TAG, "Audio files concatenated successfully!");
-                    callback.onSuccess(outputPath);
-                } else {
-                    callback.onError("Failed to concatenate audio files:\n" + session.getFailStackTrace());
-                }
-                callback.onProgress(Progress.CLEAR);
-                deleteTempFiles(outputDir, outputPath);
-                callback.onProgress(Progress.FINISHED);
-            });
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * 根据输入的文本，为每个字符生成一个wav音频文件
-     * 此方法遍历输入的文本，为每个字符生成一个特定频率的音频文件
-     * 频率由字符到频率的映射决定，每个字符的音频保存在指定的输出目录中
-     *
-     * @param text 输入的文本，将为其中的每个字符生成音频
-     * @param outputDir 输出目录，生成的音频文件将保存在此目录中
-     */
-    private void generateWavForEachChar(String text, String outputDir) {
-        int index = 0;
-        for (char c : text.toCharArray()) {
-            double frequency = CharToFrequencyMapper.getFrequency(c);
-            String outputPath = String.format("%s/char_%d.wav", outputDir, index);
-
-            // 构建 FFmpeg 命令，每个字符生成一个独立的 wav 文件
-            String ffmpegCommand = String.format(
-                    "-f lavfi -i aevalsrc='sin(2*PI*t*%.2f)':d=0.5 -acodec pcm_s16le -ar 44100 %s",
-                    frequency,
-                    outputPath
-            );
-            FFmpegKit.execute(ffmpegCommand);
-            index++;
-        }
-    }
-
-    /**
-     * 根据给定的文本生成每个字符对应的音频文件，并将这些音频文件合并成一个音频文件
-     *
-     * @param text 输入的文本，将为每个字符生成音频
-     * @param outputDir 输出目录的路径，用于保存生成的音频文件
-     * @param callback 回调接口，用于通知音频生成和合并完成
-     */
-    public void generateAndConcatenate(String text, String outputDir, Callback callback) {
-        callback.onStart();
-        File outputDirFile = new File(outputDir);
-        // 清空缓存
-        if (outputDirFile.exists()) {
-            for (File file : outputDirFile.listFiles()) {
-                file.delete();
-            }
-        }
-        String finalOutput = String.format("%s/%s.wav", outputDir, System.currentTimeMillis());
-        callback.onProgress(Progress.GENERATING);
-        generateWavForEachChar(text, outputDir);
-        String[] wavFiles = new String[text.length()];
+    private double[] getFrequencys(String text) {
+        double[] frequencies = new double[text.length()];
         for (int i = 0; i < text.length(); i++) {
-            wavFiles[i] = String.format("%s/char_%d.wav", outputDir, i);
+            char c = text.charAt(i);
+            double frequency = CharToFrequencyMapper.getFrequency(c);
+            frequencies[i] = frequency;
         }
-        callback.onProgress(Progress.CONCATENATING);
-        concatenateWavFiles(wavFiles, outputDir, finalOutput, callback);
+        return frequencies;
+    }
+
+    private boolean generateTone(double frequency, String fileName, Callback callback) {
+        callback.onProgress(Progress.GENERATING);
+        int numSamples = (int) (DURATION * SAMPLE);
+        double[] samples = new double[numSamples];
+        byte[] generatedSound = new byte[2 * numSamples];
+
+        // 生成正弦波数据
+        for (int i = 0; i < numSamples; ++i) {
+            samples[i] = Math.sin(2 * Math.PI * i / (SAMPLE / frequency));
+        }
+
+        // 将正弦波数据转换为16位PCM格式
+        int idx = 0;
+        for (final double dVal : samples) {
+            // 将样本值转换为16位PCM格式
+            final short val = (short) ((dVal * 32767));
+            generatedSound[idx++] = (byte) (val & 0x00ff);
+            generatedSound[idx++] = (byte) ((val & 0xff00) >>> 8);
+        }
+
+        // 创建WAV文件并写入头部信息和数据
+        File file = new File(OUTPUT_PATH, fileName);
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            writeWavHeader(fos);
+            fos.write(generatedSound);
+        } catch (IOException e) {
+            callback.onError(e.getMessage());
+            return false;
+        }
+        return true;
+    }
+
+    private void writeWavHeader(FileOutputStream fos) throws IOException {
+        byte[] header = new byte[44];
+
+        long totalDataLen = SAMPLE * 2L + 36;
+        long byteRate = SAMPLE * 2L;
+
+        // RIFF/WAVE header
+        header[0] = 'R';  // RIFF/WAVE header
+        header[1] = 'I';
+        header[2] = 'F';
+        header[3] = 'F';
+        header[4] = (byte) (totalDataLen & 0xff);
+        header[5] = (byte) ((totalDataLen >> 8) & 0xff);
+        header[6] = (byte) ((totalDataLen >> 16) & 0xff);
+        header[7] = (byte) ((totalDataLen >> 24) & 0xff);
+        header[8] = 'W';
+        header[9] = 'A';
+        header[10] = 'V';
+        header[11] = 'E';
+        header[12] = 'f';  // 'fmt ' chunk
+        header[13] = 'm';
+        header[14] = 't';
+        header[15] = ' ';
+        header[16] = 16;  // 4 bytes: size of 'fmt ' chunk
+        header[17] = 0;
+        header[18] = 0;
+        header[19] = 0;
+        header[20] = 1;  // format = 1
+        header[21] = 0;
+        header[22] = 1;  // channels = 1
+        header[23] = 0;
+        header[24] = (byte) (SAMPLE & 0xff);
+        header[25] = (byte) ((SAMPLE >> 8) & 0xff);
+        header[26] = (byte) ((SAMPLE >> 16) & 0xff);
+        header[27] = (byte) ((SAMPLE >> 24) & 0xff);
+        header[28] = (byte) (byteRate & 0xff);
+        header[29] = (byte) ((byteRate >> 8) & 0xff);
+        header[30] = (byte) ((byteRate >> 16) & 0xff);
+        header[31] = (byte) ((byteRate >> 24) & 0xff);
+        header[32] = 2;  // block align
+        header[33] = 0;
+        header[34] = 16;  // bits per sample
+        header[35] = 0;
+        header[36] = 'd';
+        header[37] = 'a';
+        header[38] = 't';
+        header[39] = 'a';
+        header[40] = (byte) (SAMPLE * 2 & 0xff);
+        header[41] = (byte) ((SAMPLE * 2 >> 8) & 0xff);
+        header[42] = (byte) ((SAMPLE * 2 >> 16) & 0xff);
+        header[43] = (byte) ((SAMPLE * 2 >> 24) & 0xff);
+
+        fos.write(header, 0, 44);
+    }
+
+    private void writeWavHeader(FileOutputStream fos, int totalAudioLen, int samples, int channels) throws IOException {
+        byte[] header = new byte[44];
+
+        long totalDataLen = totalAudioLen + 36;
+        long byteRate = (long) samples * channels * 2;
+
+        // RIFF/WAVE header
+        header[0] = 'R';  // RIFF/WAVE header
+        header[1] = 'I';
+        header[2] = 'F';
+        header[3] = 'F';
+        header[4] = (byte) (totalDataLen & 0xff);
+        header[5] = (byte) ((totalDataLen >> 8) & 0xff);
+        header[6] = (byte) ((totalDataLen >> 16) & 0xff);
+        header[7] = (byte) ((totalDataLen >> 24) & 0xff);
+        header[8] = 'W';
+        header[9] = 'A';
+        header[10] = 'V';
+        header[11] = 'E';
+        header[12] = 'f';  // 'fmt ' chunk
+        header[13] = 'm';
+        header[14] = 't';
+        header[15] = ' ';
+        header[16] = 16;  // 4 bytes: size of 'fmt ' chunk
+        header[17] = 0;
+        header[18] = 0;
+        header[19] = 0;
+        header[20] = 1;  // format = 1
+        header[21] = 0;
+        header[22] = (byte) channels;  // channels
+        header[23] = 0;
+        header[24] = (byte) (samples & 0xff);
+        header[25] = (byte) ((samples >> 8) & 0xff);
+        header[26] = (byte) ((samples >> 16) & 0xff);
+        header[27] = (byte) ((samples >> 24) & 0xff);
+        header[28] = (byte) (byteRate & 0xff);
+        header[29] = (byte) ((byteRate >> 8) & 0xff);
+        header[30] = (byte) ((byteRate >> 16) & 0xff);
+        header[31] = (byte) ((byteRate >> 24) & 0xff);
+        header[32] = (byte) (channels * 2);  // block align
+        header[33] = 0;
+        header[34] = 16;  // bits per sample
+        header[35] = 0;
+        header[36] = 'd';
+        header[37] = 'a';
+        header[38] = 't';
+        header[39] = 'a';
+        header[40] = (byte) (totalAudioLen & 0xff);
+        header[41] = (byte) ((totalAudioLen >> 8) & 0xff);
+        header[42] = (byte) ((totalAudioLen >> 16) & 0xff);
+        header[43] = (byte) ((totalAudioLen >> 24) & 0xff);
+
+        fos.write(header, 0, 44);
+    }
+
+    private boolean mergeWavFiles(String[] inputFiles, Callback callback) {
+        List<byte[]> audioDataList = new ArrayList<>();
+        int totalDataSize = 0;
+        int sampleRate = 0;
+        int channels = 0;
+
+        // 读取每个WAV文件的音频数据
+        for (String inputFile : inputFiles) {
+            File file = new File(OUTPUT_PATH, inputFile);
+            try (FileInputStream fis = new FileInputStream(file)) {
+                byte[] header = new byte[44];
+                fis.read(header);
+
+                sampleRate = ByteBuffer.wrap(header, 24, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+                channels = ByteBuffer.wrap(header, 22, 2).order(ByteOrder.LITTLE_ENDIAN).getShort();
+
+                byte[] data = new byte[(int) (file.length() - 44)];
+                fis.read(data);
+                audioDataList.add(data);
+                totalDataSize += data.length;
+            } catch (IOException e) {
+                callback.onError(e.getMessage());
+                return false;
+            }
+        }
+
+        // 创建输出WAV文件并写入头部信息和数据
+        try (FileOutputStream fos = new FileOutputStream(OUTPUT_PATH + "/" + OUTPUT_FILE_NAME + ".wav")) {
+            callback.onProgress(Progress.CONCATENATING);
+            writeWavHeader(fos, totalDataSize, sampleRate, channels);
+            for (byte[] audioData : audioDataList) {
+                fos.write(audioData);
+            }
+        } catch (IOException e) {
+            callback.onError(e.getMessage());
+            return false;
+        }
+        return true;
+    }
+
+    private void clearTempFiles(String[] inputFiles) {
+        for (String inputFile : inputFiles) {
+            File file = new File(OUTPUT_PATH, inputFile);
+            file.delete();
+        }
+    }
+
+    public void start(String text, Callback callback) {
+        callback.onStart();
+        double[] frequencies = getFrequencys(text);
+        String[] fileNames = new String[frequencies.length];
+        for (int i = 0; i < frequencies.length; i++) {
+            fileNames[i] = "tone_" + i + ".wav";
+            if (!generateTone(frequencies[i], fileNames[i], callback)) return;
+        }
+        if (!mergeWavFiles(fileNames, callback)) return;
+        callback.onProgress(Progress.CLEAR);
+        clearTempFiles(fileNames);
+        callback.onSuccess(OUTPUT_PATH + "/" + OUTPUT_FILE_NAME + ".wav");
+        callback.onProgress(Progress.FINISHED);
     }
 }

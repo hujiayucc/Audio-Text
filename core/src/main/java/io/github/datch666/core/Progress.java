@@ -8,7 +8,9 @@ public enum Progress {
     /** 合并中 */
     CONCATENATING(2),
     /** 完成 */
-    FINISHED(3);
+    FINISHED(3),
+    /** 错误 */
+    ERROR(4);
 
     private final int value;
 

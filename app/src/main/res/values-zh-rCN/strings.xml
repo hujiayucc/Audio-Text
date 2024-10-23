@@ -19,4 +19,7 @@
     <string name="generate_audio">生成音频</string>
     <string name="concatenate_audio">合并音频</string>
     <string name="finish">完成</string>
+    <string name="please_input_your_text">请输入文字</string>
+    <string name="please_generate_an_audio_file_first">请先生成Audio文件</string>
+    <string name="share">分享</string>
 </resources>

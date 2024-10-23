@@ -4,8 +4,6 @@ import android.Manifest.permission.MANAGE_EXTERNAL_STORAGE
 import android.Manifest.permission.READ_EXTERNAL_STORAGE
 import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.app.Activity
-import android.content.Context.CLIPBOARD_SERVICE
-import android.content.DialogInterface
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.MediaPlayer
@@ -16,7 +14,6 @@ import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,11 +24,16 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.github.datch666.audio_text.R
 import io.github.datch666.audio_text.databinding.FragmentHomeBinding
 import io.github.datch666.audio_text.databinding.ProgressEncodeBinding
+import io.github.datch666.audio_text.ui.activity.MainActivity
 import io.github.datch666.audio_text.ui.activity.MainActivity.Companion.mainActivity
 import io.github.datch666.audio_text.ui.activity.MainActivity.Companion.permissionNames
 import io.github.datch666.core.Callback
+import io.github.datch666.core.MusicToText
 import io.github.datch666.core.Progress
+import io.github.datch666.core.Sample
 import io.github.datch666.core.TextToMusic
+import io.github.datch666.core.TextUtils
+import java.io.File
 import kotlin.system.exitProcess
 
 class HomeFragment : Fragment() {
@@ -78,41 +80,41 @@ class HomeFragment : Fragment() {
                 mediaPlayer.stop()
                 mediaPlayer.reset()
                 return@setOnClickListener
+            } else if (binding.editView.text?.isBlank() == true) {
+                Toast.makeText(this, getString(R.string.please_input_your_text), Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
             }
             onGenerate()
         }
     }
 
     private fun Activity.onGenerate() {
-        val music = TextToMusic()
-        Thread {
-            music.generateAndConcatenate(
-                binding.editView.text.toString(),
-                cacheDir.path,
-                object : Callback {
-                    override fun onStart() {
-                        dialog.setCancelable(false)
-                        mainActivity.runOnUiThread {
-                            dialog.show()
-                        }
-                    }
+        if (File("${filesDir.path}/audio").exists().not()) {
+            File("${filesDir.path}/audio").mkdir()
+        }
+        val music = TextToMusic("${filesDir.path}/audio", Sample.STANDARD)
+        music.start(TextUtils.stringToUnicode(binding.editView.text.toString()), object : Callback {
+            override fun onStart() {
+                dialog.show()
+                dialog.setCancelable(false)
+            }
 
-                    override fun onSuccess(path: String) {
-                        playAudio(path)
-                    }
+            override fun onSuccess(fileName: String) {
+                MainActivity.fileName = fileName
+                dialog.setCancelable(true)
+            }
 
-                    override fun onError(errorMessage: String) {
-                        Log.e("TAG", "onError: $errorMessage")
-                    }
+            override fun onError(errorMessage: String) {
+                onStatusChange(Progress.ERROR, errorMessage)
+            }
 
-                    override fun onProgress(progress: Progress) {
-                        onStatusChange(progress)
-                    }
-                })
-        }.start()
+            override fun onProgress(progress: Progress) {
+                onStatusChange(progress)
+            }
+        })
     }
 
-    private fun onStatusChange(progress: Progress) {
+    private fun onStatusChange(progress: Progress, error: String = "") {
         when (progress.value) {
             1 -> mainActivity.runOnUiThread {
                 dialogBinding.message.text = getString(R.string.generate_audio)
@@ -126,46 +128,17 @@ class HomeFragment : Fragment() {
                 dialogBinding.message.text = getString(R.string.finish)
                 dialog.setCancelable(true)
             }
-        }
-    }
 
-    // 播放音频文件
-    private fun playAudio(path: String) {
-        if (path.isBlank()) {
-            Toast.makeText(
-                mainActivity,
-                getString(R.string.please_input_the_path_of_the_audio_file), Toast.LENGTH_SHORT
-            ).show()
-            return
-        }
-        try {
-            mediaPlayer.setDataSource(path)
-            mediaPlayer.prepare()
-            mediaPlayer.start()
-            mediaPlayer.setOnCompletionListener {
-                mediaPlayer.reset()
+            4 -> mainActivity.runOnUiThread {
+                dialog.dismiss()
+                MaterialAlertDialogBuilder(mainActivity)
+                    .setTitle(R.string.error)
+                    .setCancelable(false)
+                    .setMessage(error)
+                    .setPositiveButton(getString(R.string.ok)) { dialog, _ ->
+                        dialog.dismiss()
+                    }.show()
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-            var error: String = ""
-            for (i in e.stackTrace.indices) {
-                error += e.stackTrace[i].toString() + "\n"
-            }
-            MaterialAlertDialogBuilder(mainActivity)
-                .setTitle(getString(R.string.error))
-                .setMessage(error)
-                .setCancelable(false)
-                .setNeutralButton(getString(R.string.copy)) { _, _ ->
-                    val clipboardManager =
-                        mainActivity.getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                    clipboardManager.setPrimaryClip(
-                        android.content.ClipData.newPlainText(
-                            "error",
-                            error
-                        )
-                    )
-                }.setNegativeButton(getString(R.string.close)) { dialog, _ -> dialog.dismiss() }
-                .show()
         }
     }
 
@@ -182,7 +155,7 @@ class HomeFragment : Fragment() {
                 if (permissions[0] == MANAGE_EXTERNAL_STORAGE && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
                     val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
                     intent.addCategory(Intent.CATEGORY_DEFAULT)
-                    intent.setData(Uri.parse("package:io.github.datch666.audio_text"))
+                    intent.data = Uri.parse("package:io.github.datch666.audio_text")
                     startActivity(intent)
                     return@setPositiveButton
                 }
