@@ -22,4 +22,7 @@
     <string name="please_input_your_text">请输入文字</string>
     <string name="please_generate_an_audio_file_first">请先生成Audio文件</string>
     <string name="share">分享</string>
+    <string name="save">保存</string>
+    <string name="save_success">已保存到 %1$s</string>
+    <string name="please_select_a_file_first">请先选择一个文件</string>
 </resources>

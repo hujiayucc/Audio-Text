@@ -1,8 +1,15 @@
 package io.github.datch666.audio_text.ui.activity
 
+import android.Manifest.permission.MANAGE_EXTERNAL_STORAGE
+import android.Manifest.permission.READ_EXTERNAL_STORAGE
+import android.Manifest.permission.WRITE_EXTERNAL_STORAGE
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.Settings
 import android.view.KeyEvent
 import android.view.Menu
 import android.view.MenuItem
@@ -10,8 +17,10 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
 import androidx.viewpager2.widget.ViewPager2
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayoutMediator
 import io.github.datch666.audio_text.R
 import io.github.datch666.audio_text.databinding.ActivityMainBinding
@@ -19,6 +28,8 @@ import io.github.datch666.audio_text.ui.adapter.ViewPagerAdapter
 import io.github.datch666.audio_text.ui.fragment.HomeFragment
 import io.github.datch666.audio_text.ui.fragment.SecondFragment
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 import kotlin.system.exitProcess
 
 @Suppress("DEPRECATION")
@@ -41,8 +52,8 @@ class MainActivity : AppCompatActivity() {
         // 设置系统 UI 标志，允许布局延伸到状态栏区域
         window.decorView.systemUiVisibility = (
                 View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN  // 布局延伸到状态栏
-                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE   // 保持布局稳定
-        )
+                        or View.SYSTEM_UI_FLAG_LAYOUT_STABLE   // 保持布局稳定
+                )
 
         // 设置状态栏颜色为透明，这样布局背景能够延伸到状态栏后面
         window.statusBarColor = android.graphics.Color.TRANSPARENT
@@ -56,10 +67,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun initViewPager() {
         viewPager2.isUserInputEnabled = false
-        viewPager2.adapter = ViewPagerAdapter(this, listOf(
-            HomeFragment(),
-            SecondFragment()
-        ))
+        viewPager2.adapter = ViewPagerAdapter(
+            this, listOf(
+                HomeFragment(),
+                SecondFragment()
+            )
+        )
 
         TabLayoutMediator(binding.tabLayout, viewPager2) { tab, position ->
             tab.text = when (position) {
@@ -85,16 +98,41 @@ class MainActivity : AppCompatActivity() {
         return super.onKeyDown(keyCode, event)
     }
 
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == 2 && resultCode == RESULT_OK) {
+            val uri = data?.data
+            if (uri != null) {
+                val fileName = uri.path?.split("/")?.last().toString()
+                val filePath =
+                    uri.path?.substringBeforeLast("/")?.replace("/external_files",
+                        Environment.getExternalStorageDirectory().absolutePath)
+                val file = File(filePath, fileName)
+                deFileName = file.absolutePath
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
-            0,1 -> {
+            0, 1 -> {
                 if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    Toast.makeText(this,
-                        getString(R.string.permission_granted, permissionNames[requestCode]), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this,
+                        getString(R.string.permission_granted, permissionNames[requestCode]),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 } else {
-                    Toast.makeText(this,
-                        getString(R.string.permission_denied, permissionNames[requestCode]), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this,
+                        getString(R.string.permission_denied, permissionNames[requestCode]),
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
@@ -109,12 +147,26 @@ class MainActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.shareAudio -> {
                 if (fileName == null) {
-                    Toast.makeText(this,
-                        getString(R.string.please_generate_an_audio_file_first), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this,
+                        getString(R.string.please_generate_an_audio_file_first), Toast.LENGTH_SHORT
+                    ).show()
                 } else {
                     shareAudio()
                 }
                 true
+            }
+
+            R.id.saveAudio -> {
+                if (fileName == null) {
+                    Toast.makeText(
+                        this,
+                        getString(R.string.please_generate_an_audio_file_first), Toast.LENGTH_SHORT
+                    ).show()
+                } else {
+                    saveAudio()
+                }
+                return true
             }
 
             else -> super.onOptionsItemSelected(item)
@@ -133,6 +185,76 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent.createChooser(intent, getString(R.string.app_name)))
     }
 
+    private fun saveAudio() {
+        if (ActivityCompat.checkSelfPermission(
+                this,
+                READ_EXTERNAL_STORAGE
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermission(arrayOf(READ_EXTERNAL_STORAGE), 0)
+            return
+        } else if (ActivityCompat.checkSelfPermission(
+                this,
+                WRITE_EXTERNAL_STORAGE
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            requestPermission(arrayOf(WRITE_EXTERNAL_STORAGE), 1)
+            return
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager()
+                .not()
+        ) {
+            requestPermission(arrayOf(MANAGE_EXTERNAL_STORAGE))
+            return
+        }
+        try {
+            val file = File(fileName.toString())
+            val saveFile = File(Environment.getExternalStorageDirectory(), "Download/${file.name}")
+            if (saveFile.exists().not()) saveFile.createNewFile()
+            val inputStream = FileInputStream(file)
+            val fos = FileOutputStream(saveFile)
+            fos.write(inputStream.readBytes())
+            inputStream.close()
+            fos.close()
+            Toast.makeText(
+                this,
+                getString(R.string.save_success, "${saveFile.absolutePath}"),
+                Toast.LENGTH_SHORT
+            ).show()
+        } catch (e: Exception) {
+            MaterialAlertDialogBuilder(this)
+                .setTitle(getString(R.string.error))
+                .setMessage(e.message)
+                .setCancelable(false)
+                .setPositiveButton(getString(R.string.ok)) { dialog, _ ->
+                    dialog.dismiss()
+                }
+                .show()
+        }
+    }
+
+    private fun requestPermission(permissions: Array<String>, requestCode: Int = 2) {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.tips))
+            .setMessage(
+                getString(
+                    R.string.this_feature_requires_permission,
+                    permissionNames[requestCode]
+                )
+            )
+            .setPositiveButton(getString(R.string.ok)) { _, _ ->
+                if (permissions[0] == MANAGE_EXTERNAL_STORAGE && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
+                    intent.addCategory(Intent.CATEGORY_DEFAULT)
+                    intent.data = Uri.parse("package:io.github.datch666.audio_text")
+                    startActivity(intent)
+                    return@setPositiveButton
+                }
+                requestPermissions(permissions, requestCode)
+            }.setNeutralButton(getString(R.string.cancel)) { _, _ ->
+                exitProcess(403)
+            }.show()
+    }
+
     companion object {
         val permissionNames = arrayOf(
             "READ_EXTERNAL_STORAGE",
@@ -141,5 +263,6 @@ class MainActivity : AppCompatActivity() {
         )
         lateinit var mainActivity: MainActivity
         var fileName: String? = null
+        var deFileName: String? = null
     }
 }

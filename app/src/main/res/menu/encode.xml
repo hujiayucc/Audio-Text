@@ -6,4 +6,10 @@
         android:title="@string/share"
         android:icon="@drawable/ic_share"
         app:showAsAction="always"/>
+
+    <item
+        android:id="@+id/saveAudio"
+        android:title="@string/save"
+        android:icon="@drawable/ic_save"
+        app:showAsAction="always"/>
 </menu>

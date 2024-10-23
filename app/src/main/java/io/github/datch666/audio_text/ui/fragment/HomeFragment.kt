@@ -57,30 +57,7 @@ class HomeFragment : Fragment() {
 
     private fun Activity.initFragment() {
         binding.button.setOnClickListener {
-            if (ActivityCompat.checkSelfPermission(
-                    this,
-                    READ_EXTERNAL_STORAGE
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                requestPermission(arrayOf(READ_EXTERNAL_STORAGE), 0)
-                return@setOnClickListener
-            } else if (ActivityCompat.checkSelfPermission(
-                    this,
-                    WRITE_EXTERNAL_STORAGE
-                ) != PackageManager.PERMISSION_GRANTED
-            ) {
-                requestPermission(arrayOf(WRITE_EXTERNAL_STORAGE), 1)
-                return@setOnClickListener
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager()
-                    .not()
-            ) {
-                requestPermission(arrayOf(MANAGE_EXTERNAL_STORAGE))
-                return@setOnClickListener
-            } else if (mediaPlayer.isPlaying) {
-                mediaPlayer.stop()
-                mediaPlayer.reset()
-                return@setOnClickListener
-            } else if (binding.editView.text?.isBlank() == true) {
+            if (binding.editView.text?.isBlank() == true) {
                 Toast.makeText(this, getString(R.string.please_input_your_text), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
@@ -140,28 +117,5 @@ class HomeFragment : Fragment() {
                     }.show()
             }
         }
-    }
-
-    private fun Activity.requestPermission(permissions: Array<String>, requestCode: Int = 2) {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(getString(R.string.tips))
-            .setMessage(
-                getString(
-                    R.string.this_feature_requires_permission,
-                    permissionNames[requestCode]
-                )
-            )
-            .setPositiveButton(getString(R.string.ok)) { _, _ ->
-                if (permissions[0] == MANAGE_EXTERNAL_STORAGE && Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                    val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION)
-                    intent.addCategory(Intent.CATEGORY_DEFAULT)
-                    intent.data = Uri.parse("package:io.github.datch666.audio_text")
-                    startActivity(intent)
-                    return@setPositiveButton
-                }
-                requestPermissions(permissions, requestCode)
-            }.setNeutralButton(getString(R.string.cancel)) { _, _ ->
-                exitProcess(403)
-            }.show()
     }
 }
