@@ -29,6 +29,7 @@ class HomeFragment : Fragment() {
     private val dialog = MaterialAlertDialogBuilder(mainActivity).create()
     private lateinit var dialogBinding: ProgressEncodeBinding
     private val handler = Handler(Looper.getMainLooper())
+    private var startTime: Long = 0  // 用于记录任务开始的时间
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -45,10 +46,13 @@ class HomeFragment : Fragment() {
     private fun Activity.initFragment() {
         binding.button.setOnClickListener {
             if (binding.editView.text?.isBlank() == true) {
-                Toast.makeText(this, getString(R.string.please_input_your_text), Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.please_input_your_text), Toast.LENGTH_SHORT)
+                    .show()
                 return@setOnClickListener
             }
-            onGenerate()
+            Thread {
+                onGenerate()
+            }.start()
         }
     }
 
@@ -56,11 +60,19 @@ class HomeFragment : Fragment() {
         if (File("${filesDir.path}/audio").exists().not()) {
             File("${filesDir.path}/audio").mkdir()
         }
-        val music = TextToMusic("${filesDir.path}/audio", Sample.STANDARD)
+        val text = binding.editView.text.toString()
+        val music = TextToMusic(
+            "${filesDir.path}/audio",
+            binding.editView.text.toString().substring(0, if (text.length > 20) 20 else text.length),
+            Sample.STANDARD
+        )
         music.start(TextUtils.stringToUnicode(binding.editView.text.toString()), object : Callback {
             override fun onStart() {
-                dialog.show()
-                dialog.setCancelable(false)
+                startTime = System.currentTimeMillis()
+                runOnUiThread {
+                    dialog.show()
+                    dialog.setCancelable(false)
+                }
             }
 
             override fun onSuccess(fileName: String) {
@@ -75,25 +87,54 @@ class HomeFragment : Fragment() {
             override fun onStatus(status: Status) {
                 onStatusChange(status)
             }
+
+            override fun onProgress(total: Int, progress: Int) {
+                onProgressUpdate(total, progress)
+            }
         })
     }
 
-    private fun onStatusChange(status: Status, error: String = "") {
+    private fun Activity.onProgressUpdate(total: Int, progress: Int) {
+        runOnUiThread {
+            dialogBinding.progressBar.max = total
+            dialogBinding.progressBar.progress = progress
+            val percentage = (progress.toDouble() / total * 100).toInt()
+            val elapsedTime = System.currentTimeMillis() - startTime
+            val remainingTime = if (progress > 0) {
+                (elapsedTime / progress) * (total - progress)  // 用已用时间推算剩余时间
+            } else {
+                0L
+            }
+            val remainingMinutes = (remainingTime / 1000) / 60
+            val remainingSeconds = (remainingTime / 1000) % 60
+            val timeEstimate = String.format("%02d:%02d", remainingMinutes, remainingSeconds)
+            dialogBinding.message.text = getString(
+                R.string.progress_message,
+                progress,
+                total,
+                percentage,
+                timeEstimate
+            )
+        }
+    }
+
+    private fun Activity.onStatusChange(status: Status, error: String = "") {
         when (status.value) {
-            1 -> mainActivity.runOnUiThread {
-                dialogBinding.message.text = getString(R.string.generate_audio)
+            Status.GENERATING.value -> runOnUiThread {
+                dialogBinding.title.text = getString(R.string.generate_audio)
             }
 
-            2 -> mainActivity.runOnUiThread {
-                dialogBinding.message.text = getString(R.string.concatenate_audio)
+            Status.CONCATENATING.value -> runOnUiThread {
+                dialogBinding.title.text = getString(R.string.concatenate_audio)
             }
 
-            3 -> mainActivity.runOnUiThread {
-                dialogBinding.message.text = getString(R.string.finish)
+            Status.FINISHED.value -> runOnUiThread {
+                dialogBinding.title.text = getString(R.string.finish)
                 dialog.setCancelable(true)
             }
 
-            4 -> mainActivity.runOnUiThread {
+            Status.ERROR.value -> runOnUiThread {
+                dialogBinding.title.text = getString(R.string.error)
                 dialog.dismiss()
                 MaterialAlertDialogBuilder(mainActivity)
                     .setTitle(R.string.error)

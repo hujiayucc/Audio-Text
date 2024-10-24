@@ -25,4 +25,10 @@
     <string name="save">保存</string>
     <string name="save_success">已保存到 %1$s</string>
     <string name="please_select_a_file_first">请先选择一个文件</string>
+    <string name="progress_message">%1$s/%2$s %3$s%% 预计剩余时间: %4$s</string>
+    <string name="sure_delete_audio">是否确定删除 %1$s 吗？</string>
+    <string name="help">帮助</string>
+    <string name="delete">删除</string>
+    <string name="play">播放</string>
+    <string name="pause">暂停</string>
 </resources>

@@ -19,14 +19,19 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.FileProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayoutMediator
 import io.github.datch666.audio_text.R
 import io.github.datch666.audio_text.databinding.ActivityMainBinding
+import io.github.datch666.audio_text.databinding.FileListBinding
+import io.github.datch666.audio_text.ui.adapter.FileItemAdapter
 import io.github.datch666.audio_text.ui.adapter.ViewPagerAdapter
 import io.github.datch666.audio_text.ui.fragment.HomeFragment
 import io.github.datch666.audio_text.ui.fragment.SecondFragment
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -145,7 +150,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
-            R.id.shareAudio -> {
+            R.id.menu_share -> {
                 if (fileName == null) {
                     Toast.makeText(
                         this,
@@ -157,7 +162,7 @@ class MainActivity : AppCompatActivity() {
                 true
             }
 
-            R.id.saveAudio -> {
+            R.id.menu_save -> {
                 if (fileName == null) {
                     Toast.makeText(
                         this,
@@ -166,6 +171,11 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     saveAudio()
                 }
+                return true
+            }
+
+            R.id.menu_play -> {
+                playAudio()
                 return true
             }
 
@@ -206,15 +216,26 @@ class MainActivity : AppCompatActivity() {
             requestPermission(arrayOf(MANAGE_EXTERNAL_STORAGE))
             return
         }
+        val file = File(fileName.toString())
+        val saveFile = File(Environment.getExternalStorageDirectory(), "Download/${file.name}")
         try {
-            val file = File(fileName.toString())
-            val saveFile = File(Environment.getExternalStorageDirectory(), "Download/${file.name}")
-            if (saveFile.exists().not()) saveFile.createNewFile()
-            val inputStream = FileInputStream(file)
-            val fos = FileOutputStream(saveFile)
-            fos.write(inputStream.readBytes())
-            inputStream.close()
-            fos.close()
+            lifecycleScope.launch(Dispatchers.IO) {
+                if (!saveFile.exists()) saveFile.createNewFile()
+
+                val inputStream = FileInputStream(file)
+                val fos = FileOutputStream(saveFile)
+
+                val buffer = ByteArray(4096) // 4KB 缓冲区
+                var bytesRead: Int
+
+                while (inputStream.read(buffer).also { bytesRead = it } != -1) {
+                    fos.write(buffer, 0, bytesRead)
+                }
+
+                inputStream.close()
+                fos.close()
+            }
+
             Toast.makeText(
                 this,
                 getString(R.string.save_success, "${saveFile.absolutePath}"),
@@ -229,6 +250,23 @@ class MainActivity : AppCompatActivity() {
                     dialog.dismiss()
                 }
                 .show()
+        }
+    }
+
+    private fun playAudio() {
+        val listViewBinding = FileListBinding.inflate(layoutInflater)
+        val fileList = File(filesDir, "audio").listFiles()
+        listViewBinding.listView.adapter = FileItemAdapter(this, fileList!!)
+        if (fileList.size != 0) {
+            listViewBinding.textView.text = getString(R.string.help)
+            listViewBinding.close.visibility = View.VISIBLE
+        }
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setView(listViewBinding.root)
+            .setCancelable(fileList.size == 0)
+            .show()
+        listViewBinding.close.setOnClickListener {
+            dialog.dismiss()
         }
     }
 

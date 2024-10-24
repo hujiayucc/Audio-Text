@@ -2,13 +2,19 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     <item
-        android:id="@+id/shareAudio"
+        android:id="@+id/menu_share"
         android:title="@string/share"
         android:icon="@drawable/ic_share"
-        app:showAsAction="always"/>
+        app:showAsAction="ifRoom"/>
 
     <item
-        android:id="@+id/saveAudio"
+        android:id="@+id/menu_play"
+        android:title="Play Audio"
+        android:icon="@drawable/ic_play"
+        app:showAsAction="ifRoom"/>
+
+    <item
+        android:id="@+id/menu_save"
         android:title="@string/save"
         android:icon="@drawable/ic_save"
         app:showAsAction="always"/>

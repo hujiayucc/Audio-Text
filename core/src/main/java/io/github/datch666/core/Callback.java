@@ -7,6 +7,8 @@ public interface Callback {
     void onSuccess(String fileName);
     /** 发生错误 */
     void onError(String errorMessage);
-    /** 进度 */
+    /** 状态 */
     void onStatus(Status status);
+    /** 进度 */
+    void onProgress(int total, int progress);
 }

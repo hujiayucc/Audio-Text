@@ -24,4 +24,10 @@
     <string name="save">Save</string>
     <string name="save_success">Save to %1$s successfully</string>
     <string name="please_select_a_file_first">Please select a file first</string>
+    <string name="progress_message">%1$s/%2$s %3$s%% Estimated remaining time: %4$s</string>
+    <string name="sure_delete_audio">Are you sure to delete %1$s ?</string>
+    <string name="help">Help</string>
+    <string name="delete">Delete</string>
+    <string name="play">Play</string>
+    <string name="pause">Pause</string>
 </resources>

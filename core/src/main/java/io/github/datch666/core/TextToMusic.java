@@ -25,7 +25,7 @@ public class TextToMusic {
     /**
      * 输出文件名
      */
-    private final String OUTPUT_FILE_NAME = String.valueOf(System.currentTimeMillis());
+    private final String OUTPUT_FILE_NAME;
     /**
      * 持续时间（秒）
      */
@@ -35,9 +35,11 @@ public class TextToMusic {
      * 标准采样率
      * @param outputPath 输出路径
      */
-    public TextToMusic(String outputPath) {
+    public TextToMusic(String outputPath, String fileName) {
         OUTPUT_PATH = outputPath;
         SAMPLE = Sample.STANDARD.getValue();
+        OUTPUT_FILE_NAME = fileName.replace("/", "_")
+                .replace("\\", "_");
     }
 
     /**
@@ -46,9 +48,11 @@ public class TextToMusic {
      * @param outputPath 输出路径
      * @param sample {@link Sample} 采样率
      */
-    public TextToMusic(String outputPath, Sample sample) {
+    public TextToMusic(String outputPath, String fileName, Sample sample) {
         OUTPUT_PATH = outputPath;
         SAMPLE = sample.getValue();
+        OUTPUT_FILE_NAME = fileName.replace("/", "_")
+                .replace("\\", "_");
     }
 
     private double[] getFrequencys(String text) {
@@ -61,6 +65,7 @@ public class TextToMusic {
         return frequencies;
     }
 
+    // 生成单个音频文件
     private boolean generateTone(double frequency, String fileName, Callback callback) {
         callback.onStatus(Status.GENERATING);
         int numSamples = (int) (DURATION * SAMPLE);
@@ -203,38 +208,63 @@ public class TextToMusic {
         fos.write(header, 0, 44);
     }
 
+    // 合并多个WAV文件
     private boolean mergeWavFiles(String[] inputFiles, Callback callback) {
-        List<byte[]> audioDataList = new ArrayList<>();
         int totalDataSize = 0;
         int sampleRate = 0;
         int channels = 0;
 
-        // 读取每个WAV文件的音频数据
-        for (String inputFile : inputFiles) {
-            File file = new File(OUTPUT_PATH, inputFile);
-            try (FileInputStream fis = new FileInputStream(file)) {
-                byte[] header = new byte[44];
-                fis.read(header);
-
-                sampleRate = ByteBuffer.wrap(header, 24, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
-                channels = ByteBuffer.wrap(header, 22, 2).order(ByteOrder.LITTLE_ENDIAN).getShort();
-
-                byte[] data = new byte[(int) (file.length() - 44)];
-                fis.read(data);
-                audioDataList.add(data);
-                totalDataSize += data.length;
-            } catch (IOException e) {
-                callback.onError(e.getMessage());
-                return false;
-            }
-        }
-
-        // 创建输出WAV文件并写入头部信息和数据
+        // 创建输出WAV文件
         try (FileOutputStream fos = new FileOutputStream(OUTPUT_PATH + "/" + OUTPUT_FILE_NAME + ".wav")) {
             callback.onStatus(Status.CONCATENATING);
+            // 第一遍：计算总的数据大小、采样率和通道数
+            for (int i = 0; i < inputFiles.length; i++) {
+                String inputFile = inputFiles[i];
+                callback.onProgress(inputFiles.length, i + 1);
+                File file = new File(OUTPUT_PATH, inputFile);
+
+                try (FileInputStream fis = new FileInputStream(file)) {
+                    byte[] header = new byte[44];
+                    fis.read(header);  // 读取WAV头部
+
+                    // 获取采样率和通道数
+                    if (i == 0) {  // 只在第一个文件中获取采样率和通道数
+                        sampleRate = ByteBuffer.wrap(header, 24, 4).order(ByteOrder.LITTLE_ENDIAN).getInt();
+                        channels = ByteBuffer.wrap(header, 22, 2).order(ByteOrder.LITTLE_ENDIAN).getShort();
+                    }
+
+                    // 计算总的数据大小（排除每个文件的44字节头部）
+                    totalDataSize += (file.length() - 44);
+                } catch (IOException e) {
+                    callback.onError(e.getMessage());
+                    return false;
+                }
+            }
+
+            // 写入WAV头部信息
+            callback.onStatus(Status.CONCATENATING);
             writeWavHeader(fos, totalDataSize, sampleRate, channels);
-            for (byte[] audioData : audioDataList) {
-                fos.write(audioData);
+
+            // 第二遍：写入音频数据
+            for (int i = 0; i < inputFiles.length; i++) {
+                callback.onProgress(inputFiles.length, i + 1);
+                String inputFile = inputFiles[i];
+                File file = new File(OUTPUT_PATH, inputFile);
+
+                try (FileInputStream fis = new FileInputStream(file)) {
+                    // 跳过WAV头部
+                    fis.skip(44);
+
+                    byte[] buffer = new byte[4096];  // 定义一个4KB缓冲区
+                    int bytesRead;
+                    // 分块读取数据并写入输出文件
+                    while ((bytesRead = fis.read(buffer)) != -1) {
+                        fos.write(buffer, 0, bytesRead);
+                    }
+                } catch (IOException e) {
+                    callback.onError(e.getMessage());
+                    return false;
+                }
             }
         } catch (IOException e) {
             callback.onError(e.getMessage());
@@ -243,8 +273,10 @@ public class TextToMusic {
         return true;
     }
 
-    private void clearTempFiles(String[] inputFiles) {
-        for (String inputFile : inputFiles) {
+    private void clearTempFiles(String[] inputFiles, Callback callback) {
+        callback.onStatus(Status.CLEAR);
+        for (int i = 0; i < inputFiles.length; i++) {
+            String inputFile = inputFiles[i];
             File file = new File(OUTPUT_PATH, inputFile);
             file.delete();
         }
@@ -256,11 +288,12 @@ public class TextToMusic {
         String[] fileNames = new String[frequencies.length];
         for (int i = 0; i < frequencies.length; i++) {
             fileNames[i] = "tone_" + i + ".wav";
+            callback.onProgress(frequencies.length, i+1);
             if (!generateTone(frequencies[i], fileNames[i], callback)) return;
         }
         if (!mergeWavFiles(fileNames, callback)) return;
         callback.onStatus(Status.CLEAR);
-        clearTempFiles(fileNames);
+        clearTempFiles(fileNames, callback);
         callback.onSuccess(OUTPUT_PATH + "/" + OUTPUT_FILE_NAME + ".wav");
         callback.onStatus(Status.FINISHED);
     }

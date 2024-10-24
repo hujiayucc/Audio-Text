@@ -1,0 +1,4 @@
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="@android:color/transparent" /> <!-- 使用主题的 colorPrimary 作为背景色 -->
+    <corners android:radius="5dp" />
+</shape>
