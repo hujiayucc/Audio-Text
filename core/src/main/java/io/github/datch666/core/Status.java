@@ -1,6 +1,6 @@
 package io.github.datch666.core;
 
-public enum Progress {
+public enum Status {
     /** 清除状态 */
     CLEAR(0),
     /** 生成中 */
@@ -14,7 +14,7 @@ public enum Progress {
 
     private final int value;
 
-    Progress(int value) {
+    Status(int value) {
         this.value = value;
     }
 

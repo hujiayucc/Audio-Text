@@ -62,7 +62,7 @@ public class TextToMusic {
     }
 
     private boolean generateTone(double frequency, String fileName, Callback callback) {
-        callback.onProgress(Progress.GENERATING);
+        callback.onStatus(Status.GENERATING);
         int numSamples = (int) (DURATION * SAMPLE);
         double[] samples = new double[numSamples];
         byte[] generatedSound = new byte[2 * numSamples];
@@ -231,7 +231,7 @@ public class TextToMusic {
 
         // 创建输出WAV文件并写入头部信息和数据
         try (FileOutputStream fos = new FileOutputStream(OUTPUT_PATH + "/" + OUTPUT_FILE_NAME + ".wav")) {
-            callback.onProgress(Progress.CONCATENATING);
+            callback.onStatus(Status.CONCATENATING);
             writeWavHeader(fos, totalDataSize, sampleRate, channels);
             for (byte[] audioData : audioDataList) {
                 fos.write(audioData);
@@ -259,9 +259,9 @@ public class TextToMusic {
             if (!generateTone(frequencies[i], fileNames[i], callback)) return;
         }
         if (!mergeWavFiles(fileNames, callback)) return;
-        callback.onProgress(Progress.CLEAR);
+        callback.onStatus(Status.CLEAR);
         clearTempFiles(fileNames);
         callback.onSuccess(OUTPUT_PATH + "/" + OUTPUT_FILE_NAME + ".wav");
-        callback.onProgress(Progress.FINISHED);
+        callback.onStatus(Status.FINISHED);
     }
 }

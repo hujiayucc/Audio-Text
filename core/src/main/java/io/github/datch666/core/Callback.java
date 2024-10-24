@@ -8,5 +8,5 @@ public interface Callback {
     /** 发生错误 */
     void onError(String errorMessage);
     /** 进度 */
-    void onProgress(Progress progress);
+    void onStatus(Status status);
 }
