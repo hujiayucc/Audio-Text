@@ -7,7 +7,7 @@ public enum Sample {
     /** 高质量 */
     HIGH(48000),
     /** 超高 */
-    SUPER_HIGH(96000);
+    VERY_HIGH(96000);
     private final int value;
 
     Sample(int value) {

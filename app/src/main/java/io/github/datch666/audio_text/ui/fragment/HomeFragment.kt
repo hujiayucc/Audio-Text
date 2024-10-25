@@ -30,6 +30,7 @@ class HomeFragment : Fragment() {
     private lateinit var dialogBinding: ProgressEncodeBinding
     private val handler = Handler(Looper.getMainLooper())
     private var startTime: Long = 0  // 用于记录任务开始的时间
+    private var sample = Sample.STANDARD
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -54,6 +55,14 @@ class HomeFragment : Fragment() {
                 onGenerate()
             }.start()
         }
+
+        binding.radioGroup.setOnCheckedChangeListener { _, checkedId ->
+            when (checkedId) {
+                binding.standard.id -> sample = Sample.STANDARD
+                binding.high.id -> sample = Sample.HIGH
+                binding.veryHigh.id -> sample = Sample.VERY_HIGH
+            }
+        }
     }
 
     private fun Activity.onGenerate() {
@@ -64,7 +73,7 @@ class HomeFragment : Fragment() {
         val music = TextToMusic(
             "${filesDir.path}/audio",
             binding.editView.text.toString().substring(0, if (text.length > 20) 20 else text.length),
-            Sample.STANDARD
+            sample
         )
         music.start(TextUtils.stringToUnicode(binding.editView.text.toString()), object : Callback {
             override fun onStart() {

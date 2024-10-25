@@ -30,6 +30,7 @@ import io.github.datch666.audio_text.ui.adapter.FileItemAdapter
 import io.github.datch666.audio_text.ui.adapter.ViewPagerAdapter
 import io.github.datch666.audio_text.ui.fragment.HomeFragment
 import io.github.datch666.audio_text.ui.fragment.SecondFragment
+import io.github.datch666.core.Sample
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File

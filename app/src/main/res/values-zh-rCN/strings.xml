@@ -31,4 +31,7 @@
     <string name="delete">删除</string>
     <string name="play">播放</string>
     <string name="pause">暂停</string>
+    <string name="standard">标准</string>
+    <string name="high">高品质</string>
+    <string name="very_high">非常高</string>
 </resources>

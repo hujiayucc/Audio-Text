@@ -30,4 +30,7 @@
     <string name="delete">Delete</string>
     <string name="play">Play</string>
     <string name="pause">Pause</string>
+    <string name="standard">Standard</string>
+    <string name="high">High</string>
+    <string name="very_high">Very High</string>
 </resources>

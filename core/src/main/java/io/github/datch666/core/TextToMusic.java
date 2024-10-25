@@ -52,10 +52,10 @@ public class TextToMusic {
         OUTPUT_PATH = outputPath;
         SAMPLE = sample.getValue();
         OUTPUT_FILE_NAME = fileName.replace("/", "_")
-                .replace("\\", "_");
+                .replace("\\", "_") + "_" + sample.name();
     }
 
-    private double[] getFrequencys(String text) {
+    public static double[] getFrequencys(String text) {
         double[] frequencies = new double[text.length()];
         for (int i = 0; i < text.length(); i++) {
             char c = text.charAt(i);

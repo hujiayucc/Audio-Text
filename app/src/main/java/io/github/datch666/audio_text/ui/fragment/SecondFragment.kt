@@ -14,7 +14,6 @@ import io.github.datch666.audio_text.databinding.FragmentSecondBinding
 import io.github.datch666.audio_text.ui.activity.MainActivity
 import io.github.datch666.audio_text.ui.activity.MainActivity.Companion.mainActivity
 import io.github.datch666.core.MusicToText
-import io.github.datch666.core.Sample
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -44,7 +43,7 @@ class SecondFragment(): Fragment() {
                 lifecycleScope.launch(Dispatchers.IO) {
                     try {
                         // 异步执行 decode 操作，防止阻塞主线程
-                        val text = MusicToText(Sample.STANDARD).decode(MainActivity.deFileName)
+                        val text = MusicToText().decode(MainActivity.deFileName)
                         // 切换回主线程，更新 UI
                         withContext(Dispatchers.Main) {
                             binding.editTextDecryptedContent.setText(text)
