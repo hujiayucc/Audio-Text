@@ -110,8 +110,10 @@ class MainActivity : AppCompatActivity() {
             if (uri != null) {
                 val fileName = uri.path?.split("/")?.last().toString()
                 val filePath =
-                    uri.path?.substringBeforeLast("/")?.replace("/external_files",
-                        Environment.getExternalStorageDirectory().absolutePath)
+                    uri.path?.substringBeforeLast("/")?.replace(
+                        "/external_files",
+                        Environment.getExternalStorageDirectory().absolutePath
+                    )
                 val file = File(filePath, fileName)
                 deFileName = file.absolutePath
             }
@@ -195,7 +197,7 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent.createChooser(intent, getString(R.string.app_name)))
     }
 
-    private fun saveAudio() {
+    fun saveAudio() {
         if (ActivityCompat.checkSelfPermission(
                 this,
                 READ_EXTERNAL_STORAGE
@@ -217,7 +219,15 @@ class MainActivity : AppCompatActivity() {
             return
         }
         val file = File(fileName.toString())
-        val saveFile = File(Environment.getExternalStorageDirectory(), "Download/${file.name}")
+        var saveFile = File(Environment.getExternalStorageDirectory(), "Download/${file.name}")
+        if (saveFile.exists()) saveFile = File(
+            Environment.getExternalStorageDirectory(), "Download/${
+                file.name.replace(
+                    ".wav",
+                    "_${System.currentTimeMillis()}.wav"
+                )
+            }"
+        )
         try {
             lifecycleScope.launch(Dispatchers.IO) {
                 if (!saveFile.exists()) saveFile.createNewFile()

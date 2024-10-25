@@ -18,6 +18,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.github.datch666.audio_text.R
 import io.github.datch666.audio_text.databinding.DialogMusicProgressBinding
 import io.github.datch666.audio_text.databinding.FileItemBinding
+import io.github.datch666.audio_text.ui.activity.MainActivity.Companion.fileName
+import io.github.datch666.audio_text.ui.activity.MainActivity.Companion.mainActivity
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
@@ -123,6 +125,12 @@ class FileItemAdapter(
                     intent.type = "audio/wav"
                     intent.putExtra(Intent.EXTRA_STREAM, uri)
                     context.startActivity(Intent.createChooser(intent, context.getString(R.string.app_name)))
+                    return@setOnMenuItemClickListener true
+                }
+
+                R.id.action_save -> {
+                    fileName = file.absolutePath
+                    mainActivity.saveAudio()
                     return@setOnMenuItemClickListener true
                 }
                 else -> return@setOnMenuItemClickListener false
