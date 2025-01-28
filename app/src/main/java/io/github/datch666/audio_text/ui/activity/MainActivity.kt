@@ -265,7 +265,9 @@ class MainActivity : AppCompatActivity() {
 
     private fun playAudio() {
         val listViewBinding = FileListBinding.inflate(layoutInflater)
-        val fileList = File(filesDir, "audio").listFiles()
+        val file = File(filesDir, "audio")
+        if (!file.exists()) file.mkdirs()
+        val fileList = file.listFiles()
         listViewBinding.listView.adapter = FileItemAdapter(this, fileList!!)
         if (fileList.size != 0) {
             listViewBinding.textView.text = getString(R.string.help)
