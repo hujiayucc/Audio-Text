@@ -1,5 +1,7 @@
 package io.github.datch666.core;
 
+import android.util.Log;
+
 import org.apache.commons.math3.complex.Complex;
 import org.apache.commons.math3.transform.DftNormalization;
 import org.apache.commons.math3.transform.FastFourierTransformer;
@@ -38,7 +40,7 @@ public class AudioAnalyzer {
                 System.out.println("Dominant frequency: " + dominantFrequency);
             }
         } catch (IOException e) {
-            e.printStackTrace();
+            Log.e("AudioAnalyzer", "Error reading file: " + e.getMessage(), e);
         }
 
         return frequencies;
