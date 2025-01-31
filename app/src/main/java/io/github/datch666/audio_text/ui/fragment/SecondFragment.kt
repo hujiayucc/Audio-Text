@@ -47,11 +47,13 @@ class SecondFragment(): Fragment() {
                         // 切换回主线程，更新 UI
                         withContext(Dispatchers.Main) {
                             binding.editTextDecryptedContent.setText(text)
+                            binding.editTextDecryptedContent.setSelection(text.length)
                         }
                     } catch (e: Exception) {
                         // 捕获异常并在 UI 上处理
                         withContext(Dispatchers.Main) {
                             binding.editTextDecryptedContent.setText(e.message)
+                            binding.editTextDecryptedContent.setSelection(e.message?.length ?: 0)
                         }
                     }
                 }
